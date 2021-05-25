@@ -1,24 +1,24 @@
+import enum
 from math import isclose
 from typing import Optional
 
-from cgain.application import CurrencyPair, Exchange, OrderBook
+from cgain.application import CurrencyPair, Exchange
 from cgain.deps import Container
-from cgain.restapi.dto.dto import Side, SpendQueryDTO, SpendRespDTO
+from cgain.restapi.dto.dto import Side, SpendRespDTO
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.params import Query
 
 router = APIRouter()
-
-from loguru import logger
 
 
 @router.get("/spendings", response_model=SpendRespDTO)
 @inject
 def rules(
-    side: Side,
     amount: float,
-    pair: Optional[str] = "BTC-USDT",
-    exchange: Exchange = Depends(Provide[Container.exchange]),
+    side: Side = Query(..., enum=["SELL", "BUY"]),
+    pair: Optional[str] = Query("BTC-USDT", min_length=3, max_length=20),
+    exchange=Depends(Provide[Container.exchange]),
 ):
     try:
         orderbook = exchange.get_orderbook(pair=CurrencyPair(pair))
